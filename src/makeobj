@@ -1,0 +1,10 @@
+include makefile.comm
+TARGET=$(SERVER_ROOT)/sdfs
+OBJ=$(SERVER_ROOT)/obj/*.o
+
+all:$(TARGET)
+
+$(TARGET):$(OBJ)
+	g++  $^ -o $@ ${LIBS}
+clean:
+	rm -f $(TARGET)
