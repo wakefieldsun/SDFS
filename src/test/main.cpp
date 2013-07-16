@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "waiter.h"
 #include "Customer.h"
+#include "../common/Logger.h"
 
 
 using namespace std;
@@ -104,5 +105,9 @@ int main()
 
 	c1.notifyObserver();
 	c2.notifyObserver();
+
+	Logger *logger = Logger::getAccessLogger();
+	logger->log(LOG_INFO, "hello!%s", "sdfs");
+
 	return 0;
 }
