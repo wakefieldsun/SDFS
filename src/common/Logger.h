@@ -21,7 +21,7 @@ public:
 	virtual ~Logger();
 
 	void setRotate();
-	void log(int priority, const char *strfmt, ...);
+	void log(int priority, const char *text, const int len);
 
 private:
 	Logger(LogContext* context);

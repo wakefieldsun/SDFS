@@ -7,7 +7,7 @@
 
 
 #include <limits.h>
-#include <stdarg.h>
+//#include <stdarg.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -63,17 +63,11 @@ int Logger::Open()
 	return 0;
 }
 
-void Logger::log(const int priority, const char *strfmt, ...)
+void Logger::log(const int priority, const char *text, const int len)
 {
 	bool bNeedSync;
-	char text[LINE_MAX];
 	char *caption;
-	int len;
 
-	va_list ap;
-	va_start(ap, strfmt);
-	len = vsnprintf(text, sizeof(text), strfmt, ap);
-	va_end(ap);
 
 	switch(priority)
 	{

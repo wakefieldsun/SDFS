@@ -7,8 +7,10 @@
 #include <vector>
 #include <errno.h>
 #include <sys/time.h>
+#include <syslog.h>
 #include <time.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #define MAX_PATH_SIZE	255
 #ifndef LINE_MAX
@@ -26,6 +28,9 @@
 #define USE_CACHE	1
 #define LOG_LEVEL LOG_DEBUG
 
+#ifndef DEBUG
+#define DEBUG 1
+#endif
 
 //extern bool g_schedule_flag;
 //extern time_t g_current_time;
