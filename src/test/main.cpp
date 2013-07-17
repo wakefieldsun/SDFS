@@ -3,12 +3,13 @@
 #include <stdlib.h>
 #include <vector>
 #include <stdio.h>
+#include <unistd.h>
 #include "../common/common_define.h"
 #include "waiter.h"
 #include "Customer.h"
 #include "../common/Log.h"
 #include "../thread/Thread.h"
-
+#include "../thread/Mutex.h"
 
 using namespace std;
 using namespace sdfs;
@@ -74,10 +75,26 @@ string getSid()
 }
 */
 
+struct Share_Data
+{
+	char buf[LINE_MAX];
+	Mutex mutex;
+	int value;
+};
+
 void *test_func(void *arg)
 {
-	Log::Debug("Thread working...\n");
-	Log::Debug("I'm %d\n", pthread_self());
+	struct Share_Data *pData = (struct Share_Data *)arg;
+	while(1)
+	{
+		//pData->mutex.Lock();
+		//Log::Debug("Thread working...\n");
+		Log::Debug("I'm %x", pthread_self());
+		sprintf(pData->buf, "value: %d", pData->value++);
+		Log::Debug("value: %d", pData->value);
+		sleep(1);
+		//pData->mutex.Unlock();
+	}
 	return NULL;
 }
 
@@ -118,21 +135,26 @@ int main()
 //
 //	printf("LOG_DEBUG:%d LOG_INFO:%d\n", LOG_DEBUG, LOG_INFO);
 //	Log::Debug("hello world!%s", "sdfs");
-
-	Thread thread1(test_func, NULL);
-	Thread thread2(test_func, NULL);
-//	Log::Debug("Start...");
-//	Log::Debug("LOG_DEBUG:%d LOG_INFO:%d LOG_NOTICE:%d LOG_WARNING:%d "\
-//			"LOG_ERR:%d LOG_CRIT:%d LOG_ALERT:%d LOG_EMERG:%d", LOG_DEBUG, \
-//			LOG_INFO, LOG_NOTICE, LOG_WARNING, LOG_ERR, LOG_CRIT, \
-//			LOG_ALERT, LOG_EMERG);
+	struct Share_Data data;
+	data.value=0;
+	//memset(&data, 0, sizeof(struct Share_Data));
+	Thread thread1(test_func, &data);
+	Thread thread2(test_func, &data);
+////	Log::Debug("Start...");
+////	Log::Debug("LOG_DEBUG:%d LOG_INFO:%d LOG_NOTICE:%d LOG_WARNING:%d "\
+////			"LOG_ERR:%d LOG_CRIT:%d LOG_ALERT:%d LOG_EMERG:%d", LOG_DEBUG, \
+////			LOG_INFO, LOG_NOTICE, LOG_WARNING, LOG_ERR, LOG_CRIT, \
+////			LOG_ALERT, LOG_EMERG);
 	result = thread1.Start();
 	if(result != 0)
 		Log::Error("error:%s, create thread1", STRERROR(result));
-	thread2.Start();
+	result = thread2.Start();
 	if(result != 0)
 		Log::Error("error:%s, create thread2", STRERROR(result));
-
+	sleep(10);
+	thread1.Killself();
+	thread2.Killself();
 	//Log::Error("test");
+	sleep(10);
 	return 0;
 }

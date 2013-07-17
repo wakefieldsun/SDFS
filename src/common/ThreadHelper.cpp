@@ -150,7 +150,7 @@ int ThreadHelper::create(pthread_t *pid, void *(*startfunc)(void *), \
 int ThreadHelper::kill(pthread_t *tid)
 {
 	int result;
-
+	Log::Debug("to kill: %x", *tid);
 	if ((result=pthread_kill(*tid, SIGINT)) != 0)
 	{
 		Log::Error("file: "__FILE__", line: %d, " \
@@ -158,7 +158,7 @@ int ThreadHelper::kill(pthread_t *tid)
 			"errno: %d, error info: %s", \
 			__LINE__, result, STRERROR(result));
 	}
-
+	Log::Debug("kill successful: %x", *tid);
 	return 0;
 }
 

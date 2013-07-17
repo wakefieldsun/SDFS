@@ -42,6 +42,9 @@ int Thread::Start()
 
 int Thread::Killself()
 {
+	Log::Debug("kill...isStart:%d", isStart);
+	if(isStart == false)
+		return 0;
 	return ThreadHelper::kill(&m_pid);
 }
 

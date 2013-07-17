@@ -255,6 +255,7 @@ int Logger::Sync(bool bNeedLock)
 		break;
 	}
 	}while(0);
+	pLogContext->p_cur_buf = pLogContext->m_buf;
 	if(bNeedLock && (result = pthread_mutex_unlock(&pLogContext->lock)) != 0)
 	{
 		fprintf(stderr, "file: "__FILE__", line: %d, call" \
