@@ -32,6 +32,10 @@
 #define DEBUG 1
 #endif
 
+#define DEFAULT_STACK_SIZE 20*1024
+
+typedef void *(*thread_func)(void *arg);
+
 //extern bool g_schedule_flag;
 //extern time_t g_current_time;
 

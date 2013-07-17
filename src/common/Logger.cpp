@@ -67,7 +67,7 @@ void Logger::log(const int priority, const char *text, const int len)
 {
 	bool bNeedSync;
 	char *caption;
-
+	//printf("Log:%d, %s, %d", priority, text, len);
 
 	switch(priority)
 	{
@@ -80,15 +80,15 @@ void Logger::log(const int priority, const char *text, const int len)
 		caption = "INFO";
 		break;
 	case LOG_NOTICE:
-		bNeedSync = false;
+		bNeedSync = true;
 		caption = "NOTICE";
 		break;
 	case LOG_WARNING:
-		bNeedSync = false;
+		bNeedSync = true;
 		caption = "WARNING";
 		break;
 	case LOG_ERR:
-		bNeedSync = false;
+		bNeedSync = true;
 		caption = "ERROR";
 		break;
 	case LOG_CRIT:
@@ -104,7 +104,7 @@ void Logger::log(const int priority, const char *text, const int len)
 		caption = "EMERG";
 		break;
 	default:
-		bNeedSync = false;
+		bNeedSync = true;
 		caption = "UNKOWN";
 		break;
 	}
@@ -354,6 +354,7 @@ void Logger::Close()
 		pLogContext->m_buf = NULL;
 		pLogContext->p_cur_buf = NULL;
 	}
+	delete pLogContext;
 }
 
 } /* namespace sdfs */

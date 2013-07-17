@@ -1,36 +1,10 @@
 INCLUDE= \
-#-I/usr/include/mysql \
-#-I/usr/include/libxml2 \
 -I${SERVER_ROOT}/src/common \
-#-I${SERVERCOMMON}/include \
-#-I${FRAMECOMMON}/include \
-#-I${SRVFRAME}/include \
 -I${SERVER_ROOT}/src/task \
 -I${SERVER_ROOT}/src/main \
-#-I${SERVER_ROOT}/src/thread \
--I${SERVER_ROOT}/src/command \
-#-I/usr/include/oracle/11.2/client64 
-#-I${FRAMECOMMON}/include/adns 
+-I${SERVER_ROOT}/src/command
 LIBS= \
-#-L${SERVERCOMMON}/lib/ \
-#-L${FRAMECOMMON}/lib \
-#-L${SRVFRAME}/lib \
-#-L/usr/lib64/mysql \
-#-L/usr/lib/oracle/11.2/client64/lib \
 -L/usr/local/lib \
-#-lservercommon \
-#-lsrvframe \
-#-lframecommon \
-#-lmysqlclient_r \
-#-lxml2 \
-#-lz \
 -lpthread \
-#-lgd \
-#-lssl \
-#-luuid \
-#-lclntsh \
-#-locci \
-#-lnnz11 \
-#-ladns \
 -Wl,-rpath,../libs
 CFLAGS = -g -Wall -D_REENTRANT -D__USE_EPOLL 

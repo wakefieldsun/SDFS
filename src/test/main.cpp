@@ -7,6 +7,7 @@
 #include "waiter.h"
 #include "Customer.h"
 #include "../common/Log.h"
+#include "../thread/Thread.h"
 
 
 using namespace std;
@@ -73,6 +74,13 @@ string getSid()
 }
 */
 
+void *test_func(void *arg)
+{
+	Log::Debug("Thread working...\n");
+	Log::Debug("I'm %d\n", pthread_self());
+	return NULL;
+}
+
 int main()
 {
 //	data d;
@@ -99,17 +107,32 @@ int main()
 	//string str("123");
 	//cout<<str<<endl;
 //	free(pScp);
-	waiter w;
-	Customer c1("sun"), c2("liu");
-	c1.addObserver((Observer *)&w);
-	c2.addObserver((Observer *)&w);
+	int result;
+//	waiter w;
+//	Customer c1("sun"), c2("liu");
+//	c1.addObserver((Observer *)&w);
+//	c2.addObserver((Observer *)&w);
+//
+//	c1.notifyObserver();
+//	c2.notifyObserver();
+//
+//	printf("LOG_DEBUG:%d LOG_INFO:%d\n", LOG_DEBUG, LOG_INFO);
+//	Log::Debug("hello world!%s", "sdfs");
 
-	c1.notifyObserver();
-	c2.notifyObserver();
+	Thread thread1(test_func, NULL);
+	Thread thread2(test_func, NULL);
+//	Log::Debug("Start...");
+//	Log::Debug("LOG_DEBUG:%d LOG_INFO:%d LOG_NOTICE:%d LOG_WARNING:%d "\
+//			"LOG_ERR:%d LOG_CRIT:%d LOG_ALERT:%d LOG_EMERG:%d", LOG_DEBUG, \
+//			LOG_INFO, LOG_NOTICE, LOG_WARNING, LOG_ERR, LOG_CRIT, \
+//			LOG_ALERT, LOG_EMERG);
+	result = thread1.Start();
+	if(result != 0)
+		Log::Error("error:%s, create thread1", STRERROR(result));
+	thread2.Start();
+	if(result != 0)
+		Log::Error("error:%s, create thread2", STRERROR(result));
 
-	printf("LOG_DEBUG:%d LOG_INFO:%d\n", LOG_DEBUG, LOG_INFO);
-	Log::Debug("hello world!%s", "sdfs");
-
-
+	//Log::Error("test");
 	return 0;
 }

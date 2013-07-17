@@ -67,7 +67,7 @@ void Log::Warning(char *format, ...)
 	va_start(ap, format);
 	len = vsnprintf(text, sizeof(text), format, ap);
 	va_end(ap);
-	Logger::getErrorLogger()->log(LOG_WARNING, text, len);
+	Logger::getAccessLogger()->log(LOG_WARNING, text, len);
 #endif
 }
 
