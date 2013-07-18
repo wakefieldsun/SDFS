@@ -37,7 +37,7 @@ public:
 	 */
 	static int init_attr(pthread_attr_t &attr, const int stacksize, int type=PTHREAD_CREATE_DETACHED);
 	static int create(pthread_t *pid, void *(*startfunc)(void *), \
-			void *arg, const int stacksize);
+			void *arg, const int stacksize, int type);
 	static int kill(pthread_t *tid);
 };
 

@@ -10,6 +10,7 @@
 #include "../common/Log.h"
 #include "../thread/Thread.h"
 #include "../thread/Mutex.h"
+#include "../thread/IRunnable.h"
 
 using namespace std;
 using namespace sdfs;
@@ -78,24 +79,61 @@ string getSid()
 struct Share_Data
 {
 	char buf[LINE_MAX];
-	Mutex mutex;
 	int value;
 };
 
-void *test_func(void *arg)
+class TestRunner: public IRunnable
 {
-	struct Share_Data *pData = (struct Share_Data *)arg;
-	while(1)
+public:
+	TestRunner(struct Share_Data &data)
 	{
-		//pData->mutex.Lock();
-		//Log::Debug("Thread working...\n");
-		Log::Debug("I'm %x", pthread_self());
-		sprintf(pData->buf, "value: %d", pData->value++);
-		Log::Debug("value: %d", pData->value);
-		sleep(1);
-		//pData->mutex.Unlock();
+		m_data = &data;
+		Log::Debug("init TestRunner");
+	};
+	~TestRunner()
+	{
+	};
+
+	void *Run(void *arg)
+	{
+		//struct Share_Data *pData = (struct Share_Data *)arg;
+		int *pInt = (int *)arg;
+		while(1)
+		{
+			m_mutex.Lock();
+			Log::Debug("count: %d", *pInt);
+			if(*pInt < m_data->value){
+				Log::Debug("exit thread: %d", m_data->value);
+				m_mutex.Unlock();
+				pthread_exit((void *)0);
+			}
+			int err = sprintf(m_data->buf, "value: %d", m_data->value++);
+			if(err < 1)
+			{
+				Log::Error("error: %s", STRERROR(err));
+			}
+			Log::Debug("value: %d", m_data->value);
+			m_mutex.Unlock();
+			sleep(1);
+		}
+		pthread_exit((void *)0);
+	};
+
+	int getValue()
+	{
+		return m_data->value;
 	}
-	return NULL;
+private:
+	struct Share_Data *m_data;
+	Mutex m_mutex;
+};
+
+
+char* boolstr(int b)
+{
+	if(b)
+		return "true";
+	return "false";
 }
 
 int main()
@@ -125,36 +163,44 @@ int main()
 	//cout<<str<<endl;
 //	free(pScp);
 	int result;
+	void *ptret;
 //	waiter w;
-//	Customer c1("sun"), c2("liu");
-//	c1.addObserver((Observer *)&w);
-//	c2.addObserver((Observer *)&w);
-//
-//	c1.notifyObserver();
-//	c2.notifyObserver();
-//
-//	printf("LOG_DEBUG:%d LOG_INFO:%d\n", LOG_DEBUG, LOG_INFO);
-//	Log::Debug("hello world!%s", "sdfs");
-	struct Share_Data data;
-	data.value=0;
-	//memset(&data, 0, sizeof(struct Share_Data));
-	Thread thread1(test_func, &data);
-	Thread thread2(test_func, &data);
-////	Log::Debug("Start...");
-////	Log::Debug("LOG_DEBUG:%d LOG_INFO:%d LOG_NOTICE:%d LOG_WARNING:%d "\
-////			"LOG_ERR:%d LOG_CRIT:%d LOG_ALERT:%d LOG_EMERG:%d", LOG_DEBUG, \
-////			LOG_INFO, LOG_NOTICE, LOG_WARNING, LOG_ERR, LOG_CRIT, \
-////			LOG_ALERT, LOG_EMERG);
+	int count1 = 10;
+	int count2 = 5;
+	struct Share_Data sd;
+	memset(&sd, 0, sizeof(sd));
+	TestRunner runner(sd);
+	Thread thread1(runner, &count1, true);
+	Thread thread2(runner, &count2, true);
+//	Log::Debug("LOG_DEBUG:%d LOG_INFO:%d LOG_NOTICE:%d LOG_WARNING:%d "\
+//			"LOG_ERR:%d LOG_CRIT:%d LOG_ALERT:%d LOG_EMERG:%d", LOG_DEBUG, \
+//			LOG_INFO, LOG_NOTICE, LOG_WARNING, LOG_ERR, LOG_CRIT, \
+//			LOG_ALERT, LOG_EMERG);
 	result = thread1.Start();
 	if(result != 0)
 		Log::Error("error:%s, create thread1", STRERROR(result));
 	result = thread2.Start();
 	if(result != 0)
 		Log::Error("error:%s, create thread2", STRERROR(result));
-	sleep(10);
-	thread1.Killself();
-	thread2.Killself();
+	sleep(4);
+
+	result = thread1.isAlive();
+	Log::Debug("thread1 Alive: %s", boolstr(result));
+	result = thread2.isAlive();
+	Log::Debug("thread2 Alive: %s", boolstr(result));
+
+	//thread1.Killself();
+	//thread2.Killself();
+	result = thread1.Join(&ptret);
+	if(result != 0)
+		Log::Error("error:%s, thread1.Join", STRERROR(result));
+	result = thread2.Join(&ptret);
+	if(result != 0)
+		Log::Error("error:%s, thread2.Join", STRERROR(result));
+	Log::Debug("core.value: %d", sd.value);
+	Log::Debug("sd.buf: %s", sd.buf);
+
 	//Log::Error("test");
-	sleep(10);
+	sleep(4);
 	return 0;
 }

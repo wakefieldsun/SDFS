@@ -8,27 +8,43 @@
 #ifndef THREAD_H_
 #define THREAD_H_
 #include "../common/common_define.h"
+#include "IRunnable.h"
 #include <pthread.h>
 
 namespace sdfs {
 
+struct ThreadArg
+{
+	IRunnable	*runner;
+	void		*arg;
+};
+
+
 class Thread {
 public:
-	Thread(thread_func func, void *arg);
+	Thread(IRunnable &func,void *arg, bool joinable=false);
 	virtual ~Thread();
 
 	int Start();
 	void setStackSize(const int stacksize);
 	int Killself();
+	bool isAlive();
 	pthread_t getPid();
+	int Join(void **result);
+
+	//virtual void * Run(void *arg) = 0;
 
 private:
-	thread_func m_func;
-	void *m_pArg;
+	struct ThreadArg m_pArg;
 	pthread_t m_pid;
 	bool isStart;
+	int m_bJoinable;
 	int m_nStackSize;
+//protected:
+//	thread_func m_pfunc;
 };
+
+
 
 } /* namespace sdfs */
 #endif /* THREAD_H_ */

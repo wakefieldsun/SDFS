@@ -122,11 +122,11 @@ int ThreadHelper::init_attr(pthread_attr_t &attr, const int stack_size, int type
 }
 
 int ThreadHelper::create(pthread_t *pid, void *(*startfunc)(void *), \
-		void *arg, const int stacksize)
+		void *arg, const int stacksize, int type)
 {
 	int result;
 	pthread_attr_t attr;
-	if((result = init_attr(attr, stacksize)) != 0)
+	if((result = init_attr(attr, stacksize, type)) != 0)
 	{
 		Log::Error("file: "__FILE__", line: %d, " \
 				"call init_attr fail, " \
