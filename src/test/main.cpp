@@ -4,6 +4,11 @@
 #include <vector>
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/epoll.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <fcntl.h>
 #include "../common/common_define.h"
 #include "waiter.h"
 #include "Customer.h"
@@ -11,6 +16,10 @@
 #include "../thread/Thread.h"
 #include "../thread/Mutex.h"
 #include "../thread/IRunnable.h"
+#include "../thread/ThreadPool.h"
+
+const int PORT = 1221;
+const int LISTENQ = 1024;
 
 using namespace std;
 using namespace sdfs;
@@ -85,9 +94,9 @@ struct Share_Data
 class TestRunner: public IRunnable
 {
 public:
-	TestRunner(struct Share_Data &data)
+	TestRunner(struct Share_Data *data)
 	{
-		m_data = &data;
+		m_data = data;
 		Log::Debug("init TestRunner");
 	};
 	~TestRunner()
@@ -97,27 +106,21 @@ public:
 	void *Run(void *arg)
 	{
 		//struct Share_Data *pData = (struct Share_Data *)arg;
-		int *pInt = (int *)arg;
-		while(1)
-		{
-			m_mutex.Lock();
-			Log::Debug("count: %d", *pInt);
-			if(*pInt < m_data->value){
-				Log::Debug("exit thread: %d", m_data->value);
-				m_mutex.Unlock();
-				pthread_exit((void *)0);
-			}
-			int err = sprintf(m_data->buf, "value: %d", m_data->value++);
-			if(err < 1)
-			{
-				Log::Error("error: %s", STRERROR(err));
-			}
-			Log::Debug("value: %d", m_data->value);
-			m_mutex.Unlock();
-			sleep(1);
-		}
-		pthread_exit((void *)0);
+		int fd = (int)arg;
+		char buf[LINE_MAX];
+		memset(buf, 0, LINE_MAX);
+		Log::Debug("start reading...");
+		int nCount = read(fd, buf, LINE_MAX);
+		Log::Debug("end reading...");
+		if(nCount > 0)
+			printf("recv: %s\n", buf);
+		return NULL;
 	};
+
+	void Stop()
+	{
+		Log::Debug("TestRunner Stop");
+	}
 
 	int getValue()
 	{
@@ -136,71 +139,120 @@ char* boolstr(int b)
 	return "false";
 }
 
+int setNoblock(int sockfd)
+{
+	if (fcntl(sockfd, F_SETFL, fcntl(sockfd, F_GETFD, 0)|O_NONBLOCK) == -1)
+	{
+		return -1;
+	}
+	return 0;
+}
+
+int startSocket()
+{
+	struct sockaddr_in addr;
+	int result;
+	int fd = socket(AF_INET, SOCK_STREAM, 0);
+	result = setNoblock(fd);
+	if(result < 0)
+	{
+		Log::Error("error:%s, setNoblock", STRERROR(result));
+		return result;
+	}
+	memset(&addr, 0, sizeof(addr));
+	addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(PORT);
+	int len = sizeof(struct sockaddr);
+	result = bind(fd, (struct sockaddr *)&addr, len);
+	if(result != 0)
+	{
+		Log::Error("error:%s, bind", STRERROR(result));
+		return result;
+	}
+	listen(fd, LISTENQ);
+	Log::Info("start listening on Port: %d", PORT);
+	return fd;
+}
+
 int main()
 {
-//	data d;
-//	strcpy(d.key,"key");
-//	strcpy(d.value,"value");
-//	SERVERCOMMANDPACKET *pScp = (SERVERCOMMANDPACKET *)malloc(sizeof(SERVERCOMMANDPACKET)+sizeof(data));
-//	char *pStr = (char *)((char *)pScp+sizeof(SERVERCOMMANDPACKET));
-//	memcpy(pStr, &d, sizeof(data));
-//	//A.B.a= 1;
-//	//cout<<A.B.a<<endl;
-//	SERVERCOMMANDPACKET *pRecv = pScp;
-//	data *pData = (data *)((char *)pRecv+sizeof(SERVERCOMMANDPACKET));
-//	cout<<pData->key<<endl;
-//	cout<<pData->value<<endl;
-//	SERVERCOMMANDPACKET scp;
-//	serverCommandPacketHead *p_cph = (serverCommandPacketHead *)(&scp);
-//	string str("123");
-//	p_cph->sTransId=getSid();
-//	cout<<p_cph->sTransId<<endl;
-//	vector<data> vTest;
-//	vTest.push_back(d);
-//	data d2 = vTest.back();
-//	printf("pData: 0x%8X, d: 0x%8X\n", (unsigned int)&d2, (unsigned int)&d);
-	//string str("123");
-	//cout<<str<<endl;
-//	free(pScp);
 	int result;
 	void *ptret;
-//	waiter w;
-	int count1 = 10;
-	int count2 = 5;
-	struct Share_Data sd;
-	memset(&sd, 0, sizeof(sd));
-	TestRunner runner(sd);
-	Thread thread1(runner, &count1, true);
-	Thread thread2(runner, &count2, true);
-//	Log::Debug("LOG_DEBUG:%d LOG_INFO:%d LOG_NOTICE:%d LOG_WARNING:%d "\
-//			"LOG_ERR:%d LOG_CRIT:%d LOG_ALERT:%d LOG_EMERG:%d", LOG_DEBUG, \
-//			LOG_INFO, LOG_NOTICE, LOG_WARNING, LOG_ERR, LOG_CRIT, \
-//			LOG_ALERT, LOG_EMERG);
-	result = thread1.Start();
-	if(result != 0)
-		Log::Error("error:%s, create thread1", STRERROR(result));
-	result = thread2.Start();
-	if(result != 0)
-		Log::Error("error:%s, create thread2", STRERROR(result));
-	sleep(4);
+	bool iscontinue = true;
+	epoll_event event, keyboradevent;
+	epoll_event events[EPOLL_MAX_SIZE];
+	struct sockaddr_in their_addr;
+	unsigned int len;
+	int plfd;
+	int listenfd = startSocket();
 
-	result = thread1.isAlive();
-	Log::Debug("thread1 Alive: %s", boolstr(result));
-	result = thread2.isAlive();
-	Log::Debug("thread2 Alive: %s", boolstr(result));
+	if((plfd = epoll_create(EPOLL_MAX_SIZE))<0)
+	{
+		Log::Error("error:%s, epoll_create", STRERROR(plfd));
+		return 1;
+	}
+	event.events = EPOLLIN|EPOLLET;
+	event.data.fd = listenfd;
 
-	//thread1.Killself();
-	//thread2.Killself();
-	result = thread1.Join(&ptret);
-	if(result != 0)
-		Log::Error("error:%s, thread1.Join", STRERROR(result));
-	result = thread2.Join(&ptret);
-	if(result != 0)
-		Log::Error("error:%s, thread2.Join", STRERROR(result));
-	Log::Debug("core.value: %d", sd.value);
-	Log::Debug("sd.buf: %s", sd.buf);
+	keyboradevent.events =  EPOLLIN|EPOLLET;
+	keyboradevent.data.fd = 0;
 
-	//Log::Error("test");
-	sleep(4);
+	result = epoll_ctl(plfd, EPOLL_CTL_ADD, listenfd, &event);
+	if(result != 0)
+	{
+		Log::Error("error:%s, epoll_ctl", STRERROR(result));
+		return 1;
+	}
+
+	result = epoll_ctl(plfd, EPOLL_CTL_ADD, 0, &keyboradevent);
+	if(result != 0)
+	{
+		Log::Error("error:%s, epoll_ctl", STRERROR(result));
+		return 1;
+	}
+	TestRunner runner(NULL);
+	ThreadPool *threadpool = new ThreadPool(runner);
+	char buf[LINE_MAX];
+	Thread poolthread(threadpool);
+	poolthread.setIsWait(false);
+	poolthread.Start();
+	while(iscontinue)
+	{
+		int nfds = epoll_wait(plfd, events, EPOLL_MAX_SIZE, -1);
+		Log::Debug("main: epoll_wait returned: %d", nfds);
+		if(nfds < 0)
+		{
+			Log::Error("error, epoll_wait");
+			exit(1);
+		}
+		for (int n = 0; n < nfds; ++n) {
+			Log::Debug("main: events[%d].data.fd = %d", n, events[n].data.fd);
+		     if (events[n].data.fd == listenfd) {
+		    	 int new_fd = accept(listenfd, (struct sockaddr *) &their_addr,
+		    	                                 &len);
+
+		    	 setNoblock(new_fd);
+		    	 Log::Debug("got a connect: %d!", new_fd);
+		    	 threadpool->addTask(new_fd);
+//		    	 sleep(2);
+		    	 //thread2.Notify(new_fd);
+		     }
+		     else if(events[n].data.fd == 0)
+		     {
+		    	 int count = read(events[n].data.fd, buf, LINE_MAX);
+		    	 if(count > 0 && buf[0] == 'q'){
+		    		 iscontinue = false;
+					 epoll_ctl(plfd, EPOLL_CTL_DEL, events[n].data.fd, &events[n]);
+					 epoll_ctl(plfd, EPOLL_CTL_DEL, listenfd, &event);
+		    		 continue;
+		    	 }
+		     }
+		}
+	}
+	poolthread.Stop();
+	shutdown(listenfd, SHUT_RDWR);
+	close(listenfd);
+	delete threadpool;
 	return 0;
 }

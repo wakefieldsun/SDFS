@@ -9,20 +9,32 @@
 #define THREAD_H_
 #include "../common/common_define.h"
 #include "IRunnable.h"
+#include "ThreadCondition.h"
 #include <pthread.h>
 
 namespace sdfs {
 
-struct ThreadArg
+typedef union thread_data
+{
+	int fd;
+	void *ptr;
+}thread_data_t;
+
+struct ThreadConfig
 {
 	IRunnable	*runner;
-	void		*arg;
+	thread_data_t arg;
+	bool		bIsContinue;
+	bool		bIsWait;
+	bool		bIsIdle;
+	bool		bIsClosed;
+	CThreadCondition	cond;
 };
 
 
 class Thread {
 public:
-	Thread(IRunnable &func,void *arg, bool joinable=false);
+	Thread(IRunnable *func = NULL,void *arg = NULL, bool joinable=false);
 	virtual ~Thread();
 
 	int Start();
@@ -31,13 +43,18 @@ public:
 	bool isAlive();
 	pthread_t getPid();
 	int Join(void **result);
+	virtual void setRunnable(IRunnable &runner, void *arg);
+	virtual void setRunnable(IRunnable &runner, int fd);
+	void setIsWait(bool flag);
+	bool IsIdle();
+	void Stop();
+	void Notify(int sockfd);
 
 	//virtual void * Run(void *arg) = 0;
 
 private:
-	struct ThreadArg m_pArg;
-	pthread_t m_pid;
-	bool isStart;
+	struct ThreadConfig m_pArg;
+	pthread_t	m_pid;
 	int m_bJoinable;
 	int m_nStackSize;
 //protected:

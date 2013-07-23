@@ -18,6 +18,8 @@ public:
 
 	virtual void* Run(void *arg);
 
+	virtual void Stop() = 0;
+
 };
 
 

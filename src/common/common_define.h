@@ -17,6 +17,15 @@
 #define LINE_MAX		255
 #endif
 
+#define THREAD_COND_WAIT_SEC	10
+#define THREAD_COND_WAIT_NSEC	0
+
+#define EPOLL_MAX_SIZE			1024
+#define EPOLL_TIME_WAIT		10
+#define THREAD_POOL_SIZE		4
+#define THREAD_POOL_WAITTIME	10
+#define TASKQUEUE_MAX_SIZE	10240
+
 #define STRERROR(no) (strerror(no) != NULL ? strerror(no) : "Unkown error")
 //#define get_current_time() (g_schedule_flag ? g_current_time: time(NULL))
 #define get_current_time() time(NULL)
@@ -32,7 +41,7 @@
 #define DEBUG 1
 #endif
 
-#define DEFAULT_STACK_SIZE 20*1024
+#define DEFAULT_STACK_SIZE 10*1024*1024
 
 typedef void *(*thread_func)(void *arg);
 
