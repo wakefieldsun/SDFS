@@ -23,8 +23,8 @@ Pipe::Pipe() {
 				"info: %s", __LINE__, errno, STRERROR(errno));
 		exit(0);
 	}
-	//CToolKit::setNoblock(m_pipefds[0]);
-	//CToolKit::setNoblock(m_pipefds[1]);
+	CToolKit::setNoblock(m_pipefds[0]);
+	CToolKit::setNoblock(m_pipefds[1]);
 }
 
 Pipe::~Pipe() {

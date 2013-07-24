@@ -23,7 +23,7 @@
 #define EPOLL_MAX_SIZE			1024
 #define EPOLL_TIME_WAIT		10
 #define THREAD_POOL_SIZE		4
-#define THREAD_POOL_WAITTIME	10
+#define THREAD_POOL_WAITTIME	-1
 #define TASKQUEUE_MAX_SIZE	10240
 
 #define STRERROR(no) (strerror(no) != NULL ? strerror(no) : "Unkown error")

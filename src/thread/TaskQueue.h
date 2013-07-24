@@ -11,6 +11,8 @@
 #include <queue>
 #include <vector>
 #include "Mutex.h"
+#include "ThreadCondition.h"
+#include "../common/Log.h"
 
 namespace sdfs {
 
@@ -42,6 +44,7 @@ private:
 	{
 		m_nMaxSize = maxsize;
 		m_queue = new std::queue<Task>;
+		m_waiting = true;
 	}
 public:
 
@@ -57,55 +60,80 @@ public:
 
 	void Add(Task& task)
 	{
-		m_mutex.Lock();
+		m_cond.Lock();
 		m_queue->push(task);
-		m_mutex.Unlock();
+		m_cond.Signal();
+		m_cond.Unlock();
+	}
+	/**
+	 * GetTask will block, if no task in the queue, the method will
+	 * be waked up by Add
+	 */
+	int GetTask(Task &task)
+	{
+		m_cond.Lock();
+		Log::Debug("m_queue->size: %d", m_queue->size());
+		while(m_queue->size()< 1 && m_waiting)
+		{
+			int err = m_cond.Wait();
+			Log::Debug("waked...");
+			if(err != 0)
+			{
+				Log::Error("File: "__FILE__", line: %d, " \
+				"call pthread_join, errno: %d, info: %s",
+				__LINE__, err, STRERROR(err));
+				m_cond.Unlock();
+				return err;
+			}
+		}
+		if(!m_waiting)
+		{
+			m_cond.Unlock();
+			return -1;
+		}
+		task = m_queue->front();
+		m_queue->pop();
+		m_cond.Unlock();
+		return 0;
 	}
 
-	Task* GetTask()
+	int StopWaiting()
 	{
-		m_mutex.Lock();
-		if(m_queue->size()< 1)
-		{
-			m_mutex.Unlock();
-			return NULL;
-		}
-		Task t = m_queue->front();
-		m_queue->pop();
-		m_mutex.Unlock();
-		return &t;
+		m_waiting = false;
+		return m_cond.Broadcast();
 	}
 
 	bool IsEmpty()
 	{
 		bool rst;
-		m_mutex.Lock();
+		m_cond.Lock();
 		rst =  m_queue->empty();
-		m_mutex.Unlock();
+		m_cond.Unlock();
 		return rst;
 	}
 	bool IsFull()
 	{
 		bool rst;
-		m_mutex.Lock();
+		m_cond.Lock();
 		rst =  m_queue->size() == m_nMaxSize ? true : false;
-		m_mutex.Unlock();
+		m_cond.Unlock();
 		return rst;
 	}
 
 	int GetSize()
 	{
 		int rst;
-		m_mutex.Lock();
+		m_cond.Lock();
 		rst =  m_queue->size();
-		m_mutex.Unlock();
+		m_cond.Unlock();
 		return rst;
 	}
 private:
-	int		m_nMaxSize;
+	unsigned int		m_nMaxSize;
 	std::queue<Task>*	m_queue;
-	Mutex	m_mutex;
+	CThreadCondition	m_cond;
 	static const TaskQueue *instance;
+	bool				m_waiting;
 };
 
 } /* namespace sdfs */

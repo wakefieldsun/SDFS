@@ -20,6 +20,16 @@ CThreadCondition::~CThreadCondition() {
 	pthread_mutex_destroy(&m_mutex);
 }
 
+int CThreadCondition::Lock()
+{
+	return pthread_mutex_lock(&m_mutex);
+}
+
+int CThreadCondition::Unlock()
+{
+	return pthread_mutex_unlock(&m_mutex);
+}
+
 int CThreadCondition::Signal()
 {
 	return pthread_cond_signal(&m_cond);
@@ -40,6 +50,11 @@ int CThreadCondition::WaitTime(int sec, long nanosec)
 	spce.tv_sec=now.tv_sec+sec;
 	spce.tv_nsec = now.tv_usec*1000 + nanosec;
 	return pthread_cond_timedwait(&m_cond, &m_mutex, &spce);
+}
+
+int CThreadCondition::Broadcast()
+{
+	return pthread_cond_broadcast(&m_cond);
 }
 
 } /* namespace sdfs */

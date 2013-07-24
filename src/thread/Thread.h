@@ -20,21 +20,22 @@ typedef union thread_data
 	void *ptr;
 }thread_data_t;
 
-struct ThreadConfig
+typedef struct ThreadConfig
 {
 	IRunnable	*runner;
 	thread_data_t arg;
 	bool		bIsContinue;
-	bool		bIsWait;
 	bool		bIsIdle;
 	bool		bIsClosed;
-	CThreadCondition	cond;
-};
+}ThreadConfig;
 
+//CThreadCondition ThreadConfig::cond = new CThreadCondition;
+
+void *thread_entrance(void *arg);
 
 class Thread {
 public:
-	Thread(IRunnable *func = NULL,void *arg = NULL, bool joinable=false);
+	Thread(IRunnable *func = NULL,void *arg = NULL, bool joinable=false, thread_func entrance = thread_entrance);
 	virtual ~Thread();
 
 	int Start();
@@ -45,18 +46,17 @@ public:
 	int Join(void **result);
 	virtual void setRunnable(IRunnable &runner, void *arg);
 	virtual void setRunnable(IRunnable &runner, int fd);
-	void setIsWait(bool flag);
 	bool IsIdle();
 	void Stop();
-	void Notify(int sockfd);
 
 	//virtual void * Run(void *arg) = 0;
 
 private:
-	struct ThreadConfig m_pArg;
+	ThreadConfig m_pArg;
 	pthread_t	m_pid;
 	int m_bJoinable;
 	int m_nStackSize;
+	thread_func m_fEntrance;
 //protected:
 //	thread_func m_pfunc;
 };

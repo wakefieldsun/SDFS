@@ -19,11 +19,17 @@ public:
 	CThreadCondition();
 	virtual ~CThreadCondition();
 
+	int Lock();
+
+	int Unlock();
+
 	int Signal();
 
 	int Wait();
 
 	int WaitTime(int sec = THREAD_COND_WAIT_SEC, long nanosec = THREAD_COND_WAIT_NSEC);
+
+	int Broadcast();
 
 private:
 	pthread_cond_t	m_cond;

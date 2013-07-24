@@ -52,4 +52,10 @@ void Mutex::Unlock()
 				__LINE__, result, STRERROR(result));
 	}
 }
+
+pthread_mutex_t *Mutex::GetMutex()
+{
+	return &m_mutex;
+}
+
 }

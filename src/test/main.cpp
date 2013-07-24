@@ -23,67 +23,6 @@ const int LISTENQ = 1024;
 
 using namespace std;
 using namespace sdfs;
-/*
-struct serverCommandPacketHead{
-	unsigned int uMsgId;
-	unsigned int uSrcClientIp;
-	unsigned short usSrcClientPort;
-	unsigned int uSrcEntityType;
-	unsigned int uSrcProcessId;
-	unsigned long long ullSrcTaskId;
-	unsigned int uDestEntityType;
-	unsigned long long ullDestTaskId;
-	unsigned int uDestProcessId;
-	string sTransId;
-	unsigned int uMsgLen;
-};
-
-typedef struct tagSERVERCOMMANDPACKET {
-
-	serverCommandPacketHead scph;
-	char serverCommandPacketContent[0];
-
-} SERVERCOMMANDPACKET, * PSERVERCOMMANDPACKET;
-
-
-typedef struct tagSERVERCOMMANDPACKET {
-struct {
-unsigned int uMsgId;
-unsigned int uSrcClientIp;
-unsigned short usSrcClientPort;
-unsigned int uSrcEntityType;
-unsigned int uSrcProcessId;
-unsigned long long ullSrcTaskId;
-unsigned int uDestEntityType;
-unsigned long long ullDestTaskId;
-unsigned int uDestProcessId;
-std::string sTransId;
-unsigned int uMsgLen;
-
-
-}serverCommandPacketHead;
-
-#define uMsgLen serverCommandPacketHead.uMsgLen
-
-#define sTransId serverCommandPacketHead.sTransId
-
-char serverCommandPacketContent[0];
-
-} SERVERCOMMANDPACKET, * PSERVERCOMMANDPACKET;
-*/
-
-/*
-struct data
-{
-	char key[10];
-	char value[10];
-};
-
-string getSid()
-{
-	return string("123");
-}
-*/
 
 struct Share_Data
 {
@@ -106,14 +45,19 @@ public:
 	void *Run(void *arg)
 	{
 		//struct Share_Data *pData = (struct Share_Data *)arg;
-		int fd = (int)arg;
+		Task* task = (Task *)arg;
 		char buf[LINE_MAX];
 		memset(buf, 0, LINE_MAX);
 		Log::Debug("start reading...");
-		int nCount = read(fd, buf, LINE_MAX);
+		int nCount = read(task->sockfd, buf, LINE_MAX);
 		Log::Debug("end reading...");
+		//process
+		sleep(5);
+
 		if(nCount > 0)
 			printf("recv: %s\n", buf);
+		if(nCount <= 0)
+			printf("error read\n");
 		return NULL;
 	};
 
@@ -215,7 +159,6 @@ int main()
 	ThreadPool *threadpool = new ThreadPool(runner);
 	char buf[LINE_MAX];
 	Thread poolthread(threadpool);
-	poolthread.setIsWait(false);
 	poolthread.Start();
 	while(iscontinue)
 	{
@@ -250,9 +193,10 @@ int main()
 		     }
 		}
 	}
-	poolthread.Stop();
 	shutdown(listenfd, SHUT_RDWR);
 	close(listenfd);
+	poolthread.Stop();
+
 	delete threadpool;
 	return 0;
 }
