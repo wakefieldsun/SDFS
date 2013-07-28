@@ -41,8 +41,13 @@
 #define STORAGE_CONF_NAME	"storage.conf"
 
 //=========================NETWORK==============================//
-#define SOCK_STR_LEN 16
+#define IP4_STR_LEN 16
 #define SRV_NAME_LEN 20
+#define BACKED_SERVER_SIZE	3
+#define LOCAL_HOST	"127.0.0.1"
+#define TRACKER_FRONT_PORT	8500
+#define TRACKER_BACK_PORT	8510
+#define STORAGE_PORT		8505
 
 //==========================DEBUG===============================//
 #ifndef DEBUG

@@ -7,27 +7,40 @@
 
 #ifndef TRACKERSERVICE_H_
 #define TRACKERSERVICE_H_
+#include "../common/NetworkHelper.h"
+
 
 namespace sdfs {
-
 
 class TrackerService {
 public:
 	TrackerService();
 	virtual ~TrackerService();
-
-	virtual void Start();
+public:
+	virtual int Start();
+	virtual int Stop();
 protected:
 
-	virtual int ReadConfiguration();
+	virtual int ReadConfiguration() = 0;
 
-	virtual int OpenListenSocket();
+	virtual int OpenListenSocket() = 0;
 
-	virtual int ConnectBackendServer();
+	virtual int ConnectBackendServer() = 0;
 
-	virtual int InitFileTableServer();
+	virtual int InitFileTable() = 0;
 
-	virtual int InitWorkers();
+	virtual int InitConnectionPool() = 0;
+
+	virtual int StartWorkers() = 0;
+
+	virtual int CloseConnectionPool() = 0;
+
+	virtual int StopWorkers() = 0;
+
+	virtual int CloseFileTable() = 0;
+
+	virtual int CloseListenSocket() = 0;
+
 };
 
 } /* namespace sdfs */

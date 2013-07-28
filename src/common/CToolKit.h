@@ -16,6 +16,8 @@ public:
 	virtual ~CToolKit();
 
 	static int setNoblock(int fd);
+
+	static char *GetIpByName(const char *name, char* buf, int size);
 };
 
 } /* namespace sdfs */

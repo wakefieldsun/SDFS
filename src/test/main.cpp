@@ -174,7 +174,8 @@ int main()
 		     if (events[n].data.fd == listenfd) {
 		    	 int new_fd = accept(listenfd, (struct sockaddr *) &their_addr,
 		    	                                 &len);
-
+		    	 if(new_fd == EWOULDBLOCK)
+		    		 continue;
 		    	 setNoblock(new_fd);
 		    	 Log::Debug("got a connect: %d!", new_fd);
 		    	 threadpool->addTask(new_fd);

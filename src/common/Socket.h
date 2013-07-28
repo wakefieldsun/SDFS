@@ -13,44 +13,43 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <netdb.h>
 #include "../common/common_define.h"
 
 namespace sdfs {
 
 
 typedef struct _ServerConfig{
-	char	strIp[SOCK_STR_LEN];
+	char	strIp[IP4_STR_LEN];
 	int		nPort;
 	char	strName[SRV_NAME_LEN];
 }ServerConfig;
 
-enum SocketStatus{CLOSED = 0, ESTABLISHED, LISTENING};
+enum SocketStatus{CLOSED = 0, ESTABLISHED, LISTENING, CREATEFAILURE};
 
 typedef struct _Socket{
 	struct sockaddr_in	s_addr;
 	SocketStatus		status;
-}Socket;
+	int					sockfd;
+	int					port;
+	bool				bBlock;
+}SocketBody;
 
-class NetworkHelper {
+class Socket {
 public:
-	NetworkHelper(const ServerConfig &conf, bool isAsyn = true);
-	virtual ~NetworkHelper();
+	Socket(const ServerConfig &conf, bool isBlock = false);
+	virtual ~Socket();
 
 	int CreateListenSocket();
 
-	int CreateConnectSocket();
+	int CreateConnectSocket(ServerConfig &conf);
 
 	int Close();
 
-	int Receive(void *data, int size);
-
-	int Send(void *data, int size);
-
 private:
-	ServerConfig	m_sConf;
-	int				m_fd;
-	bool			m_bAsyn;
-	Socket			m_sSocket;
+
+	SocketBody	m_sBody;
+
 };
 
 } /* namespace sdfs */
